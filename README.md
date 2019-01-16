@@ -1,2 +1,2 @@
 # workList
-A simple to do list tools for  using web indexedDB
+A simple to do list tool using web indexedDB
