@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+		<title>work list</title>
+		<link href="../plugin/layui/css/layui.css" rel="stylesheet">
+		<link href="../css/common.css" rel="stylesheet">
+		<link href="../css/workList.css" rel="stylesheet">
+		<script src="../js/jquery-1.12.4.min.js" type="text/javascript"></script>
+		<script src="../plugin/layui/layui.all.js" type="text/javascript"></script>
+		<script src="../js/vue.js" type="text/javascript"></script>
+		<script src="../js/util.js" type="text/javascript"></script>
+		<script src="../js/db.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			var db = null; //indexed db
+			var app = null; //vue
+			var isTabAdded = false;
+			$(function() { //页面加载完成后绑定页面按钮的点击事件
+				DB.init(function(rdb) {
+					db = rdb;
+					showAllTheData();
+					refreshTabs();
+				});
+				$("#btnSave").click(function() {
+					onAddClick();
+				});
+				app = new Vue({
+					el: '#items',
+					data: {
+						items: []
+					}
+				})
+				layui.use('form', function() {
+					layui.form.render();
+					layui.form.on('select', function(e) {
+						isTabAdded = false;
+					})
+					if (db) refreshTabs();
+				});
+				testAlarm();
+			});
+
+			function refreshTabs() {
+				DB.getAllTabs({
+					final: function(tabs) {
+						$('#tab').html('');
+						$('#tab').append('<option value="">选择或添加标签</option>')
+						for (var i in tabs) {
+							$('#tab').append('<option value="' + tabs[i].name + '">' + tabs[i].name + '</option>');
+						}
+						if (layui.form) layui.form.render('select');
+						$(".layui-select-title input").on("change", function(e) {
+							var s = e.currentTarget.value;
+							setTimeout(function() {
+								var inp = $(".layui-select-title input");
+								inp[0].value = s;
+								isTabAdded = true;
+							}, 250);
+						});
+					}
+				})
+			}
+
+			function onAddClick() {
+				var title = $("#txtTitle").val();
+				if (title == '') return;
+				addItem({
+					title: title,
+					createTime: new Date(),
+					tab: isTabAdded ? $(".layui-select-title input").val() : $("#tab").val(),
+					checked: false,
+					priority: $("#priority").val()
+				}, {
+					success: function() {
+						$("#txtTitle").val('')
+						showAllTheData();
+						if (isTabAdded) {
+							//刷新标签列表
+							refreshTabs();
+						}
+					}
+				})
+			}
+			//数据库操作
+			function addItem(item, opt) {
+				opt = opt || {};
+				var tab = {
+					name: item.tab
+				}
+
+				var transaction = db.transaction(["items", "tabs"], "readwrite");
+				transaction.oncomplete = function(event) {
+					if (typeof opt.success == 'function') opt.success();
+				};
+				transaction.onerror = function(event) {
+					if (typeof opt.error == 'function') opt.error();
+					else {
+						alert('error');
+						console.error(event);
+					}
+				};
+				var tabs = transaction.objectStore("tabs");
+				tabs.index('name').get(item.tab).onsuccess = function(e) {
+					if (!e.target.result) tabs.add(tab);
+				}
+				var items = transaction.objectStore("items");
+				items.add(item);
+			}
+
+			function toggleItemState(id) {
+				var transaction = db.transaction(["items"], "readwrite");
+				var items = transaction.objectStore("items");
+				items.get(parseInt(id)).onsuccess = function(e) {
+					var item = e.target.result;
+					item.checked = !item.checked;
+					item.updateTime = new Date();
+					items.put(item);
+				};
+			}
+
+			function changeItemState(id, state) {
+				var transaction = db.transaction(["items"], "readwrite");
+				var items = transaction.objectStore("items");
+				items.get(parseInt(id)).onsuccess = function(e) {
+					var item = e.target.result;
+					item.checked = state;
+					item.updateTime = new Date();
+					items.put(item);
+					app.items['i_' + item.id] = item;
+				};
+			}
+
+			function changeItemPriority(id, priority) {
+				var transaction = db.transaction(["items"], "readwrite");
+				var items = transaction.objectStore("items");
+				items.get(parseInt(id)).onsuccess = function(e) {
+					var item = e.target.result;
+					item.priority = priority;
+					items.put(item);
+					app.items['i_' + item.id] = item;
+				};
+			}
+
+			function deleteItem(id) { //逻辑删除
+				var transaction = db.transaction(["items"], "readwrite");
+				var items = transaction.objectStore("items");
+				var item = app.items['i_' + id];
+				item.deleted = true;
+				item.deleteTime = new Date();
+				items.put(item);
+				$('#' + id).animate({
+					'margin-left': 2000
+				}, function() {
+					app.items['i_' + id] = item;
+				});
+			}
+			//显示所有数据库中的数据到页面上去
+			function showAllTheData() {
+				$("#tblData").empty();
+				var res = {};
+				var todayStr = new Date().format('yyyy-MM-dd');
+				DB.traverseItems({
+					handler: function(store, item) {
+						//把今天的item和以前没有完成的项目显示
+						if (item.createTime.format('yyyy-MM-dd') == todayStr || !item.checked)
+							res['i_' + item.id] = item;
+					},
+					final: function() {
+						app.items = res;
+					}
+				});
+			}
+			var startX = 0;
+			var elemX = 0; //元素的起始位置
+			var item = null;
+			//item拖动
+			function ondragItemStart(ev) {
+				startX = ev.screenX;
+				item = ev.target;
+				if (!$(item).hasClass('item')) {
+					if ($(item.parentElement).hasClass('item')) {
+						item = item.parentElement;
+					} else {
+						item = null;
+					}
+				}
+				if (item) {
+					elemX = parseInt($(item).css("margin-left"));
+				}
+				console.log('start');
+			}
+			//item拖动
+			function ondragItem(ev) {
+				ev.preventDefault();
+				if (item) {
+					var position = ev.screenX - startX + elemX;
+					$(item).css("margin-left", position + "px");
+					if (position < -80) {
+						changeItemState(item.id, true);
+					} else if (position > 200) {
+						deleteItem(item.id);
+					} else if (position > 50) {
+						changeItemState(item.id, false);
+					}
+				}
+			}
+			//item拖动
+			function ondragItemEnd(ev) {
+				ev.preventDefault();
+				console.log('end');
+				var id = item.id;
+				if (!app.items['i_' + item.id].deleted) {
+					$(item).animate({
+						'margin-left': 0
+					});
+				}
+				item = null;
+			}
+
+			function setPriority(id, e) {
+				layer.closeAll();
+				//配置一个透明的询问框
+				var x = e.clientX + 15;
+				var y = e.clientY - 50;
+				if (y < 0) y = 0;
+				var index = layer.msg('设置优先级', {
+					id: 'pset',
+					time: 2500, //20s后自动关闭
+					offset: [y + 'px', x + 'px'],
+					btn: ['一般', '重要', '紧急'],
+					yes: function() {
+						changeItemPriority(id, 3);
+						layer.close(index);
+					},
+					btn2: function() {
+						changeItemPriority(id, 2);
+					},
+					btn3: function() {
+						changeItemPriority(id, 1);
+					}
+				});
+			}
+			function testAlarm(){
+				// This the date to schedule the alarm
+				var mp = new Map();
+				mp.set('key',1);
+				mp.set('v','df');
+				mp.set(mp,mp);
+				mp.set('mp',mp);
+				console.log(mp.size)
+				console.log(mp)
+			}
+		</script>
+	</head>
+
+	<body>
+		<table class="layui-form" style="width: 100%;margin-top: 3px;">
+			<tr>
+				<td style="width: 3.5em;">标签：</td>
+				<td style="width: 18%;">
+					<select id="tab" name="tab" lay-search>
+					</select>
+				</td>
+				<td style="width: 5em;padding-left: 5px;">
+					<select id="priority" name="priority" lay-search>
+						<option value="3" selected>一般</option>
+						<option value="2">重要</option>
+						<option value="1">紧急</option>
+					</select>
+				</td>
+				<td style="width: 4.5em;">&emsp;内容：</td>
+				<td style="width: 50%;"><input class="layui-input" type="text" name="txtTitle" id="txtTitle" required onkeypress="if(event.keyCode==13){ onAddClick();return false; }" /></td>
+				<td>&emsp;<input class="layui-btn layui-btn-sm layui-btn-normal" type="button" value="保存" id="btnSave" style="width:80px;" /></td>
+			</tr>
+		</table>
+		<hr />
+		<div id="items">
+			<div v-if="!i.deleted" :id="i.id" v-for="i in items" :class="'item '+(i.checked?'item-ok':'')" onmousemove="ondragItem(event);"
+			 onmousedown="ondragItemStart(event);" onmouseup="ondragItemEnd(event);">
+				<span class="layui-badge" @click="setPriority(i.id,$event);" v-bind:class="{ 
+			'layui-bg-gray':i.priority==3 || !i.priority, 
+			'layui-bg-orange':i.priority==2,
+			'layui-bg-red':i.priority==1  }">{{i.priority||'3'}}</span>
+				<span><input type="checkbox" :value="i.id" v-model="i.checked" v-on:change="toggleItemState(i.id)" />{{i.title}}&emsp;&emsp;</span>
+				<span class="item-time">{{i.createTime.format('yyyy.MM.dd hh:mm')}}&emsp;&emsp;</span>
+				<span class="item-tab layui-badge layui-bg-gray" v-if="i.tab">{{i.tab}}</span>
+				<!-- <marquee behavior="scroll" direction="left" scrollamount="3"  scrolldelay="10"  loop="-1">文字滚动</marquee>    -->
+			</div>
+
+		</div>
+	</body>
+
+</html>

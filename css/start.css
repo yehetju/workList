@@ -1,0 +1,55 @@
+html{
+    height: 100%;
+    background-color: #f8f8f8;
+}
+body{
+    margin: 0;
+    padding: 15px;
+    height: calc(100% - 30px);
+}
+#frame{
+    display: flex;
+    flex-direction:row;
+    height: 100%;
+}
+#leftNav{
+    flex: 1;
+    overflow: hidden;
+}
+#navCtrl{
+    font-size: 30px; 
+    color: #a4a4a4;
+    cursor: pointer;
+    position: absolute;
+    bottom: 15px;
+    left:15px;
+}
+.navContent{
+    min-width: 200px;
+    width: calc(100% - 15px);
+}
+#main{
+    flex: 4;
+}
+
+.navHide
+{
+    animation:hideNav 0.6s;
+}
+
+@keyframes hideNav
+{
+    from {flex:1;}
+    to {flex:0;}
+}
+
+.navShow
+{
+    animation:showNav 0.6s;
+}
+
+@keyframes showNav
+{
+    from {flex:0;}
+    to {flex:1;}
+}

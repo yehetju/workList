@@ -1,0 +1,63 @@
+html{
+    height: 100%;
+}
+body{
+    margin: 0;
+    height: calc(100% - 30px);
+}
+#items{
+    overflow-x: hidden;
+}
+div.item{
+    background: rgba(0,150,136,0.7);
+    margin-bottom: 10px;
+    border-radius:3px;
+    padding: 10px;
+    color: white;
+    width:calc(100% - 20px);
+    cursor: e-resize;
+}
+div.item-ok{
+    background: lightgrey;
+    color: darkgrey;
+    text-decoration: line-through;
+}
+div.item-ok .item-time{
+    color: darkgrey;
+}
+.item *{
+	vertical-align: middle;
+}
+.layui-badge {
+    height: 18px;
+    line-height: 19px;
+	cursor: pointer;
+}
+.item-tab{
+	float: right;
+}
+.item-time{
+	color: lightgrey;
+}
+
+input[type=checkbox]{
+	width: 16px;
+	height: 16px;
+	margin: 0 5px;
+}
+
+#pset~.layui-layer-btn .layui-layer-btn0{
+	background: #eee;
+	color: darkgrey;
+	border: none;
+}
+#pset~.layui-layer-btn .layui-layer-btn1{
+	background: #FFB800;
+	color: white;
+	border: none;
+}
+#pset~.layui-layer-btn .layui-layer-btn2{
+	background: #FF5722;
+	color: white;
+	border: none;
+}
