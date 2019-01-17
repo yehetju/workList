@@ -61,3 +61,12 @@ input[type=checkbox]{
 	color: white;
 	border: none;
 }
+#win{
+	display: none;
+}
+#win_edit{
+	padding: 10px;
+}
+.layui-icon{
+	cursor: pointer;
+}

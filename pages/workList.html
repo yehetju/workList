@@ -17,6 +17,7 @@
 			var db = null; //indexed db
 			var app = null; //vue
 			var isTabAdded = false;
+			var allTabs = [];
 			$(function() { //页面加载完成后绑定页面按钮的点击事件
 				DB.init(function(rdb) {
 					db = rdb;
@@ -39,7 +40,6 @@
 					})
 					if (db) refreshTabs();
 				});
-				testAlarm();
 			});
 
 			function refreshTabs() {
@@ -59,6 +59,7 @@
 								isTabAdded = true;
 							}, 250);
 						});
+						allTabs = tabs;
 					}
 				})
 			}
@@ -242,15 +243,66 @@
 					}
 				});
 			}
-			function testAlarm(){
-				// This the date to schedule the alarm
-				var mp = new Map();
-				mp.set('key',1);
-				mp.set('v','df');
-				mp.set(mp,mp);
-				mp.set('mp',mp);
-				console.log(mp.size)
-				console.log(mp)
+			
+			
+			var itemInEdit = null;
+			function edit(id){
+				var transaction = db.transaction(["items"], "readwrite");
+				var items = transaction.objectStore("items");
+				items.get(parseInt(id)).onsuccess = function(e) {
+					var item = e.target.result;
+					layer.open({
+						id:'win_edit',
+						title:'编辑',
+						type: 1,
+						area: ['500px', '500px'],
+						content: $('#win').html() ,//这里content是一个DOM，注意：最好该元素要存放在body最外层，否则可能被其它的相对元素所影响
+						success: function(){
+						  itemInEdit = new Vue({
+						  	el:'#win_edit',
+							data:{
+								allTabs: allTabs,
+								data: item,
+								images: item.images
+							}
+						  })
+						  layui.form.render(); //更新全部
+						}
+					});
+				};
+			}
+			function saveItem(){
+				var transaction = db.transaction(["items"], "readwrite");
+				var items = transaction.objectStore("items");
+				itemInEdit.data.updateTime = new Date();
+				itemInEdit.data.images = itemInEdit.images;
+				items.put(itemInEdit.data);
+				app.items['i_'+itemInEdit.data.id] = itemInEdit.data;
+				layui.layer.closeAll();
+			}
+			function viewImage(id){
+				var transaction = db.transaction(["items"], "readwrite");
+				var items = transaction.objectStore("items");
+				items.get(parseInt(id)).onsuccess = function(e) {
+					var item = e.target.result;
+					layui.layer.open({
+						id:'win_img',
+						title:'查看图片',
+						type: 1,
+						area: ['100%', '100%'],
+						content: $('#win_imgHtml').html() ,//这里content是一个DOM，注意：最好该元素要存放在body最外层，否则可能被其它的相对元素所影响
+						success: function(){
+						  itemInEdit = new Vue({
+						  	el:'#win_img',
+							data:{
+								allTabs: allTabs,
+								data: item,
+								images: item.images
+							}
+						  })
+						}
+					});
+				};
 			}
 		</script>
 	</head>
@@ -278,7 +330,7 @@
 		<hr />
 		<div id="items">
 			<div v-if="!i.deleted" :id="i.id" v-for="i in items" :class="'item '+(i.checked?'item-ok':'')" onmousemove="ondragItem(event);"
-			 onmousedown="ondragItemStart(event);" onmouseup="ondragItemEnd(event);">
+			 onmousedown="ondragItemStart(event);" onmouseup="ondragItemEnd(event);" ondblclick="edit(this.id);">
 				<span class="layui-badge" @click="setPriority(i.id,$event);" v-bind:class="{ 
 			'layui-bg-gray':i.priority==3 || !i.priority, 
 			'layui-bg-orange':i.priority==2,
@@ -286,10 +338,82 @@
 				<span><input type="checkbox" :value="i.id" v-model="i.checked" v-on:change="toggleItemState(i.id)" />{{i.title}}&emsp;&emsp;</span>
 				<span class="item-time">{{i.createTime.format('yyyy.MM.dd hh:mm')}}&emsp;&emsp;</span>
 				<span class="item-tab layui-badge layui-bg-gray" v-if="i.tab">{{i.tab}}</span>
+				<i v-if="i.images && i.images.length>0" class="layui-icon layui-icon-picture item-tab" style="font-size: 20px; color: white;cursor:pointer;margin: -2px 5px 0 0;" @click="viewImage(i.id)"></i>
+				
 				<!-- <marquee behavior="scroll" direction="left" scrollamount="3"  scrolldelay="10"  loop="-1">文字滚动</marquee>    -->
 			</div>
 
 		</div>
+		<div>
+ </div>
+ <div id="win" style="display: none;">
+ 	<form class="layui-form"> <!-- 提示：如果你不想用form，你可以换成div等任何一个普通元素 -->
+  <div class="layui-form-item">
+    <label class="layui-form-label">标签</label>
+    <div class="layui-input-block">
+      <select v-model="data.tab">
+       <option v-for="tab in allTabs" :value="tab.name">{{tab.name}}</option>
+      </select>
+    </div>
+  </div>
+  <div class="layui-form-item layui-form-text">
+    <label class="layui-form-label">内容</label>
+    <div class="layui-input-block">
+      <textarea placeholder="请输入内容" class="layui-textarea" v-model="data.title"></textarea>
+    </div>
+  </div>
+  <div class="layui-form-item layui-form-text">
+    <label class="layui-form-label">图片</label>
+    <div id="images" class="layui-input-block">
+		<div v-for="(img,index) in images">
+			<img :src="img" onclick="trigerFileInput()"  style="height:auto;width:auto;max-height:200px;max-width:200px;"/>
+			<i class="layui-icon layui-icon-delete" style="font-size: 30px; color: red;" @click="deleteImage(index)"></i>
+		</div>
+	  <input style="visibility: hidden;display: none;" type="file" id ="headFile" onchange="loadImage()"/>
+	  <i class="layui-icon layui-icon-add-circle" style="font-size: 30px; color: #1E9FFF;" onclick="trigerFileInput()"></i>
+    </div>
+  </div>
+  <div class="layui-form-item">
+    <div class="layui-input-block">
+		<input class="layui-btn layui-btn-sm layui-btn-normal" type="button" value="保存" onclick="saveItem();" style="width:80px;" />
+    </div>
+  </div>
+  <!-- 更多表单结构排版请移步文档左侧【页面元素-表单】一项阅览 -->
+</form>
+ </div>
+ 
+<div id="win_imgHtml" style="display: none;">
+	 <div v-for="(img,index) in images">
+	 	<img :src="img" onclick="trigerFileInput()"  style="height:auto;width:auto;max-height:100%;max-width:100%;margin:10px;"/>
+	 </div>
+</div>
+ <script>
+     //触发input[type="file"]的选择事件，打开图片选择窗口
+     function trigerFileInput(){
+       document.querySelector("#win_edit #headFile").click();
+     }
+     //加载图片
+    function loadImage(){
+       var files = document.querySelector("#win_edit #headFile").files;
+	   var file = files[files.length-1];
+       var filename = file.name;
+       if(/(\.png|\.jpg)$/.test(filename)){
+         var reader = new FileReader();
+         reader.onload = function(){
+ 		   if(!itemInEdit.images) itemInEdit.images = [];
+ 		   itemInEdit.images.push(this.result);
+// 		   Vue.set(itemInEdit.data.images,count,this.result);
+         }
+         reader.readAsDataURL(file);
+       }
+       else{
+         alert("请选择正确的文件");
+       }
+   }
+   function deleteImage(index){
+	   itemInEdit.images.splice(index,1);
+   }
+ </script>
 	</body>
 
 </html>
