@@ -28,8 +28,29 @@ if(!window.Util){
 				'4': 'layui-bg-blue',
 				'5': 'layui-bg-gray'
 			}
+			function exportFile(name, data) {
+		　　　　var urlObject = window.URL || window.webkitURL || window;
+		　　　　var export_blob = new Blob([data],{type : 'application/octet-stream'});
+		　　　　var save_link = document.createElement("a")
+		　　　　save_link.href = urlObject.createObjectURL(export_blob);
+		　　　　save_link.download = name;
+		　　　　document.body.appendChild(save_link);
+				save_link.click();
+				document.body.removeChild(save_link);
+		　　}
+			function bytesToStr(byteNum){
+				if(byteNum<1024*1024){ // <1M
+					return (byteNum / 1024).toFixed(1) + 'KB';
+				}else if(byteNum<1024*1024*1024){ // <1G
+					return (byteNum / 1024 / 1024).toFixed(1) + 'MB';
+				}else if(byteNum<1024*1024*1024*1024){ // >1G
+					return (byteNum / 1024 / 1024 / 1024).toFixed(1) + 'GB';
+				}
+			}
             return {
-                PRIORITY: PRIORITY
+                PRIORITY: PRIORITY,
+				exportFile: exportFile,
+				bytesToStr: bytesToStr
             }
         })();
 }else{

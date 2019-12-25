@@ -96,47 +96,46 @@
             link.click();
             document.body.removeChild(link);
         }
-				function exportTXT(){
-					if(allData.length==0) return;
-					var cols = ['id','tab','title','checked','createTime','updateTime'];
-					let str = cols.join()+'\n';
-					for(var i in allData){
-							for(let j in cols){
-									if(allData[i][cols[j]] instanceof Date){
-										str+= allData[i][cols[j]].format('yyyy-MM-dd mm:ss') + '\t ';     
-									}else
-										str+= allData[i][cols[j]] + '\t ';     
-							}
-							str+='\n';
+		function exportTXT(){
+			if(allData.length==0) return;
+			var cols = ['id','tab','title','checked','createTime','updateTime'];
+			let str = cols.join()+'\n';
+			for(var i in allData){
+					for(let j in cols){
+							if(allData[i][cols[j]] instanceof Date){
+								str+= allData[i][cols[j]].format('yyyy-MM-dd mm:ss') + '\t ';     
+							}else
+								str+= allData[i][cols[j]] + '\t ';     
 					}
-					exportRaw('worklist备份.txt',str);
-				}
-				function exportRaw(name, data) {
-		　　　　var urlObject = window.URL || window.webkitURL || window;
-		　　　　var export_blob = new Blob([data]);
-		　　　　var save_link = document.createElement("a")
-		　　　　save_link.href = urlObject.createObjectURL(export_blob);
-		　　　　save_link.download = name;
-		　　　　document.body.appendChild(save_link);
-            save_link.click();
-            document.body.removeChild(save_link);
-		　　}
-			
-				function search(){
-						var kwd = $('#txtTitle').val();
-						var tab = $('#tab').val();
-						var res = [];
-						for(var i in allData){
-								var thisTab = allData[i].tab;
-								var title = allData[i].title;
-								var ok = true;
-								if( (tab!='' && thisTab!=tab) || (kwd!='' && title.indexOf(kwd)==-1) ){
-										ok = false;
-								}
-								if(ok) res.push(allData[i]);
+					str+='\n';
+			}
+			exportRaw('worklist备份.txt',str);
+		}
+		function exportRaw(name, data) {
+	　　　　var urlObject = window.URL || window.webkitURL || window;
+	　　　　var export_blob = new Blob([data]);
+	　　　　var save_link = document.createElement("a")
+	　　　　save_link.href = urlObject.createObjectURL(export_blob);
+	　　　　save_link.download = name;
+	　　　　document.body.appendChild(save_link);
+			save_link.click();
+			document.body.removeChild(save_link);
+	　　}
+		function search(){
+				var kwd = $('#txtTitle').val();
+				var tab = $('#tab').val();
+				var res = [];
+				for(var i in allData){
+						var thisTab = allData[i].tab;
+						var title = allData[i].title;
+						var ok = true;
+						if( (tab!='' && thisTab!=tab) || (kwd!='' && title.indexOf(kwd)==-1) ){
+								ok = false;
 						}
-						table.reload('items',{id:'items',data: res });
+						if(ok) res.push(allData[i]);
 				}
+				table.reload('items',{id:'items',data: res });
+		}
     </script>
 </head>
 

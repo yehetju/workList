@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <title>work list</title>
+    <link href="../plugin/layui/css/layui.css" rel="stylesheet">
+    <link href="../css/common.css" rel="stylesheet">
+    <script src="../js/jquery-1.12.4.min.js" type="text/javascript"></script>
+    <script src="../plugin/layui/layui.all.js" type="text/javascript"></script>
+    <script src="../js/util.js" type="text/javascript"></script>
+	<script src="../js/vue.js" type="text/javascript"></script>
+    <script src="../js/db.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var db = null; //indexed db
+		var app = null;
+        $(function() { //页面加载完成后绑定页面按钮的点击事件
+			app = new Vue({
+				el: '#images',
+				data: {
+					images: []
+				}
+			});
+            DB.init(function(rdb){
+                db = rdb;
+                showAllTheData();
+            });
+        });
+        function deleteItem(){
+            
+            showAllTheData();
+        }
+        //显示所有数据库中的数据到页面上去
+        function showAllTheData() {
+            var tr = db.transaction(["items"],"readwrite");
+            var os = tr.objectStore("items");
+            var request = os.getAll();
+            request.onsuccess = function(event){
+                var data = event.target.result;
+                var res = [];
+                for(var i in data){
+                    if(data[i].images){
+						debugger;
+						for(var j in data[i].images){
+							res.push({
+								item: data[i],
+								image: data[i].images[j]
+							});
+						}
+                    }
+                }
+                app.images = res;
+            };
+        }
+        
+		
+    </script>
+</head>
+
+<body>
+<div class="search-bar">
+    <div class="search-bar-right">
+        <input class="layui-btn layui-btn-sm layui-btn-normal" type="button" value="还原" style="width:80px;" onclick="restore();"/>
+        <input class="layui-btn layui-btn-sm layui-btn-warm" type="button" value="删除" style="width:80px;" onclick="deleteItem();"/>
+        <input class="layui-btn layui-btn-sm layui-btn-danger" type="button" value="清空" style="width:80px;" onclick="clearAll();"/>
+    </div>
+</div>
+<div id="images">
+	<img v-for="i in images" :src="i.image" />
+</div>
+</body>
+<style>
+    .layui-table, .layui-table-view{
+        margin:0;
+    }    
+	#images img{
+		height: 150px;
+		width: auto;
+		margin-bottom: 10px;
+		margin-right: 10px;
+	}
+</style>
+</html>
+

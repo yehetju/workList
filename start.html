@@ -69,8 +69,9 @@
             tabList:'./pages/tabList.html', //标签管理
             imOrExport:'./pages/imOrExport.html', //导入导出
             search:'./pages/search.html',
-            lastWeek:'./pages/lastWeek.html'
-            
+            lastWeek:'./pages/lastWeek.html',
+            fileList:'./pages/fileList.html', //附件管理
+			imgList:'./pages/imgList.html', //图片管理
         }
         function goPage(pageName){
             $("#mainFrame").attr('src', pages[pageName]);
@@ -102,8 +103,15 @@
                     </dl>
                 </li>
                 <li class="layui-nav-item">
-                    <a class="layui-icon layui-icon-delete" href="javascript:goPage('recycle');"> 回收站</a>
+                    <a class="layui-icon layui-icon-picture" href="javascript:goPage('imgList');"> 图片管理</a>
                 </li>
+				<li class="layui-nav-item">
+				    <a class="layui-icon layui-icon-file" href="javascript:goPage('fileList');"> 附件管理</a>
+				</li>
+				<li class="layui-nav-item">
+				    <a class="layui-icon layui-icon-delete" href="javascript:goPage('recycle');"> 回收站</a>
+				</li>
+				
             </ul>
        </div>
    </div>

@@ -1,80 +1,95 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
-    <title>work list</title>
-    <link href="../plugin/layui/css/layui.css" rel="stylesheet">
-    <link href="../css/common.css" rel="stylesheet">
-    <script src="../js/jquery-1.12.4.min.js" type="text/javascript"></script>
-    <script src="../plugin/layui/layui.all.js" type="text/javascript"></script>
-    <script src="../js/util.js" type="text/javascript"></script>
-    <script src="../js/db.js" type="text/javascript"></script>
-    <script type="text/javascript">
-        var db = null; //indexed db
-        $(function() { //页面加载完成后绑定页面按钮的点击事件
-            DB.init(function(rdb){
-                db = rdb;
-                showAllTheData();
-            });
-            layui.use('table', function(){
-              window.table = layui.table;
-            });
-        });
-        
-        //显示所有数据库中的数据到页面上去
-        function showAllTheData() {
-            DB.getAllTabs({
-							final:function(data){
-									var tabDiv = $('#tabs');
-									tabDiv.html('')
-									for(var i in data){
-										tabDiv.append('<div class="tab">'+data[i].name+'<i id="'+data[i].id+'" class="layui-icon layui-unselect layui-tab-close" onclick="deleteTab(this.id)">ဆ</i></div>')
-									}
-							}
-						}) 
-        }
-				
-				function deleteTab(id){
-					DB.deleteTab(Number(id));
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+		<title>work list</title>
+		<link href="../plugin/layui/css/layui.css" rel="stylesheet">
+		<link href="../css/common.css" rel="stylesheet">
+		<script src="../js/jquery-1.12.4.min.js" type="text/javascript"></script>
+		<script src="../plugin/layui/layui.all.js" type="text/javascript"></script>
+		<script src="../js/util.js" type="text/javascript"></script>
+		<script src="../js/db.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			var db = null; //indexed db
+			$(function() { //页面加载完成后绑定页面按钮的点击事件
+				DB.init(function(rdb) {
+					db = rdb;
 					showAllTheData();
-				}
-        
-    </script>
-</head>
+				});
+				layui.use('table', function() {
+					window.table = layui.table;
+				});
+			});
 
-<body>
-<div id="tabs">标签</div>
- <table id="items"></table>
-</body>
-<style>
-    .layui-table, .layui-table-view{
-        margin:0;
-    }    
-		#tabs .tab{
-			display: inline-block;
-			padding:8px 18px;
-			margin:5px;
-			background:#009E94;
-			color:white;
-			position:relative;
+			//显示所有数据库中的数据到页面上去
+			function showAllTheData() {
+				DB.getAllTabs({
+					final: function(data) {
+						var tabDiv = $('#tabs');
+						tabDiv.html('')
+						for (var i in data) {
+							tabDiv.append('<div class="tab">'+ '<i id="' + data[i].id +
+								'" class="layui-icon layui-icon-edit layui-tab-edit" onclick="editTab(this.id)"></i>' + data[i].name + '<i id="' + data[i].id +
+								'" class="layui-icon layui-unselect layui-tab-close" onclick="deleteTab(this.id)">ဆ</i></div>')
+						}
+					}
+				})
+			}
+
+			function deleteTab(id) {
+				DB.deleteTab(Number(id));
+				showAllTheData();
+			}
+			function editTab(id){
+				var newValue = prompt('请输入新的名称');
+				debugger;
+				DB.editTab(Number(id),newValue);
+				showAllTheData();
+			}
+		</script>
+	</head>
+
+	<body>
+		<div id="tabs">标签</div>
+		<table id="items"></table>
+	</body>
+	<style>
+		.layui-table,
+		.layui-table-view {
+			margin: 0;
 		}
-		.tab:hover i.layui-tab-close{
-			display:inline-block;
+
+		#tabs .tab {
+			display: inline-block;
+			padding: 8px 18px;
+			margin: 5px;
+			background: #009E94;
+			color: white;
+			position: relative;
+		}
+
+		.tab:hover i.layui-tab-close {
+			display: inline-block;
 			position: absolute;
-			right:0;
+			right: 0;
 			margin-top: 1px;
 		}
-		.tab i.layui-tab-close{
-			float:right;
-			display:none;
+		.tab:hover i.layui-tab-edit {
+			display: inline-block;
+			position: absolute;
+			left: 0;
+			margin-top: 1px;
 		}
-		.tab i.layui-tab-close:hover{
-			background: white;
-			color:darkgreen;
-			cursor:pointer;
+		.tab i.layui-tab-close,.tab i.layui-tab-edit {
+			float: right;
+			display: none;
 		}
-</style>
-</html>
 
+		.tab i.layui-tab-close:hover, .tab i.layui-tab-edit:hover  {
+			background: white;
+			color: darkgreen;
+			cursor: pointer;
+		}
+	</style>
+</html>

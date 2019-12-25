@@ -66,7 +66,11 @@ input[type=checkbox]{
 }
 #win_edit{
 	padding: 10px;
+	box-sizing: content-box;
 }
 .layui-icon{
 	cursor: pointer;
+}
+.layui-form-label,.layui-layer-btn{
+	text-align: center!important;
 }

@@ -1,3 +1,6 @@
+[v-cloak]{
+	visibility: hidden;
+}
 .layui-input, .layui-select, .layui-textarea {
     height: 30px;
     background-image: none;
